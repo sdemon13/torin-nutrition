@@ -1,31 +1,21 @@
-// pages/auth/index.tsx
 import React, { useState } from 'react'
 import { useRouter } from 'next/router'
-import dynamic from 'next/dynamic'
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   fetchSignInMethodsForEmail,
 } from 'firebase/auth'
-import { FirebaseError } from 'firebase/app'
-import { auth } from '../../firebase/config'
+import { auth } from '../../firebase/config' // Убедитесь, что путь корректный
 
-// 1. Создаём внутренний компонент, где описана логика
-function AuthPageContent() {
+const AuthPage: React.FC = () => {
   const router = useRouter()
 
-  // -------------------
-  // Состояния
-  // -------------------
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  // null = ещё не знаем (проверяем), true = регистрация, false = логин
   const [isNewUser, setIsNewUser] = useState<boolean | null>(null)
   const [error, setError] = useState<string>('')
 
-  // -------------------
-  // 1. Проверить, существует ли пользователь
-  // -------------------
+  // 1. Проверка, есть ли пользователь по email
   const handleCheckUserExists = async () => {
     setError('')
     if (!email) {
@@ -33,53 +23,46 @@ function AuthPageContent() {
       return
     }
     try {
-      // Проверяем, какие методы входа доступны для введённого email
       const signInMethods = await fetchSignInMethodsForEmail(auth, email)
-
       if (signInMethods.length > 0) {
-        // Пользователь уже существует => переход к форме входа
+        // Пользователь существует -> форма входа
         setIsNewUser(false)
       } else {
-        // Пользователя нет => регистрация
+        // Пользователь не существует -> форма регистрации
         setIsNewUser(true)
       }
     } catch (err) {
       console.error('Ошибка при проверке пользователя:', err)
-      setError('Ошибка при проверке. Попробуйте ещё раз.')
+      setError('Ошибка. Попробуйте снова.')
     }
   }
 
-  // -------------------
-  // 2. Вход (логин)
-  // -------------------
+  // 2. Вход
   const handleLogin = async () => {
     setError('')
     if (!email || !password) {
       setError('Заполните все поля')
       return
     }
-
     try {
       await signInWithEmailAndPassword(auth, email, password)
-      // Если логин успешен — перенаправляем на /dashboard
+      // Если вход успешен — перенаправляем
       router.push('/dashboard')
-    } catch (err: any) {
-      console.error('Login error:', err)
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError('Неверный email или пароль.')
-      } else {
-        setError('Ошибка при входе. Попробуйте ещё раз.')
-      }
+    } catch (err) {
+      console.error('Ошибка при входе:', err)
+      setError('Неверный email или пароль.')
     }
   }
 
-  // -------------------
-  // 3. Регистрация
-  // -------------------
+  // 3. Регистрация (Firebase требует минимум 6 символов в пароле)
   const handleSignup = async () => {
     setError('')
     if (!email || !password) {
       setError('Заполните все поля')
+      return
+    }
+    if (password.length < 6) {
+      setError('Пароль должен быть не короче 6 символов.')
       return
     }
 
@@ -88,36 +71,20 @@ function AuthPageContent() {
       // Регистрация прошла успешно — перенаправляем
       router.push('/dashboard')
     } catch (err) {
-      console.error('Signup error:', err)
-      if (err instanceof FirebaseError) {
-        if (err.code === 'auth/email-already-in-use') {
-          setError('Пользователь с таким E-mail уже существует. Попробуйте войти.')
-          // Или можно сразу переключиться на форму логина:
-          // setIsNewUser(false)
-        } else {
-          setError('Ошибка при регистрации: ' + err.message)
-        }
-      } else {
-        setError('Ошибка при регистрации.')
-      }
+      console.error('Ошибка при регистрации:', err)
+      setError('Ошибка регистрации. Возможно, e-mail уже используется.')
     }
   }
 
-  // -------------------
-  // Рендер
-  // -------------------
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100 p-4">
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-50 p-4">
       <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
         <h1 className="text-xl font-semibold mb-4 text-center">TorinNutrition</h1>
 
-        {/* Поле Email */}
+        {/* Поле для E-mail */}
         <div className="mb-4">
-          <label htmlFor="email" className="block mb-1 font-medium">
-            E-mail
-          </label>
+          <label className="block mb-1 font-medium">E-mail</label>
           <input
-            id="email"
             type="email"
             placeholder="Введите E-mail"
             className="border border-gray-300 rounded px-3 py-2 w-full"
@@ -126,14 +93,11 @@ function AuthPageContent() {
           />
         </div>
 
-        {/* Поле Пароль (показываем только когда уже знаем, логиниться или регистрироваться) */}
+        {/* Поле пароля (показываем только когда isNewUser уже определён) */}
         {isNewUser !== null && (
           <div className="mb-4">
-            <label htmlFor="password" className="block mb-1 font-medium">
-              Пароль
-            </label>
+            <label className="block mb-1 font-medium">Пароль</label>
             <input
-              id="password"
               type="password"
               placeholder="Введите пароль"
               className="border border-gray-300 rounded px-3 py-2 w-full"
@@ -146,9 +110,9 @@ function AuthPageContent() {
         {/* Вывод ошибок */}
         {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
 
-        {/* Основная кнопка */}
+        {/* Кнопки */}
         {isNewUser === null ? (
-          // Ещё не знаем, существует пользователь или нет
+          // Сначала проверяем, есть ли такой email
           <button
             className="bg-blue-500 text-white px-4 py-2 rounded w-full"
             onClick={handleCheckUserExists}
@@ -156,7 +120,7 @@ function AuthPageContent() {
             Продолжить
           </button>
         ) : isNewUser ? (
-          // Пользователя нет => регистрация
+          // Пользователя нет -> регистрация
           <button
             className="bg-green-500 text-white px-4 py-2 rounded w-full"
             onClick={handleSignup}
@@ -164,7 +128,7 @@ function AuthPageContent() {
             Зарегистрироваться
           </button>
         ) : (
-          // Пользователь есть => вход
+          // Пользователь есть -> вход
           <button
             className="bg-blue-500 text-white px-4 py-2 rounded w-full"
             onClick={handleLogin}
@@ -173,15 +137,14 @@ function AuthPageContent() {
           </button>
         )}
 
-        {/* Кнопка сброса (вернуться к шагу проверки email) */}
+        {/* Кнопка вернуться назад (сменить режим) */}
         {isNewUser !== null && (
           <button
             onClick={() => {
               setIsNewUser(null)
               setPassword('')
-              setError('')
             }}
-            className="mt-3 underline text-sm text-gray-600 block mx-auto"
+            className="mt-3 underline text-sm text-gray-600"
           >
             Вернуться к проверке E-mail
           </button>
@@ -191,8 +154,4 @@ function AuthPageContent() {
   )
 }
 
-// 2. Отключаем SSR, чтобы Firebase код не запускался при билде
-// Используем динамический импорт, который принудительно отключает рендер на сервере.
-export default dynamic(() => Promise.resolve(AuthPageContent), {
-  ssr: false,
-})
+export default AuthPage

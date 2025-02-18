@@ -1,7 +1,9 @@
+// firebase/config.ts
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
+// ВСЕ ключи берем из .env.local
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -11,6 +13,9 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
+// Инициализируем Firebase
 const app = initializeApp(firebaseConfig)
+
+// Экспорт аутентификации и базы Firestore
 export const auth = getAuth(app)
 export const db = getFirestore(app)

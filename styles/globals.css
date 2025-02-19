@@ -1,3 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Установка шрифта по умолчанию */
+body {
+    font-family: 'Playfair Display', serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    overflow-x: hidden; /* Запрещаем горизонтальный скролл */
+}
+
+/* Анимированный градиентный фон */
+@keyframes gradientAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.animated-gradient {
+    background: linear-gradient(-45deg, #ff416c, #ff4b2b, #8e44ad, #3498db, #1abc9c);
+    background-size: 400% 400%;
+    animation: gradientAnimation 10s ease infinite;
+    position: absolute; /* Позволяет фону прокручиваться */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 100vh;
+    z-index: -1;
+}
+
+/* Контейнер для контента */
+.page-container {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh; /* Позволяет прокрутке работать */
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding-bottom: 50px; /* Оставляет место внизу */
+    overflow-y: auto; /* Гарантирует прокрутку */
+}
